@@ -1,4 +1,5 @@
 version: '3.8'
+name: "hello srk"
 services:
   mongo:
     image : mongo
@@ -6,7 +7,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - ./data:/data/db
+      - hello-srk:/data/db
 
 
   backend:
@@ -32,5 +33,7 @@ services:
           - backend
           
 volumes:
-  data:
+  hello-srk:
+    driver: local
+
 
