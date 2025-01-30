@@ -8,30 +8,61 @@ services:
       - "27017:27017"
     volumes:
       - hello-srk:/data/db
-
+  redis:
+    image: redis/redis-stack
+    container_name: redis
+    ports:
+      - "6379:6379"
+      - "8001:8001"
 
   backend:
      build:
-       context: ./practice-ecommerce-ts
+       context: ./back
      container_name: backend    
      ports:
         - "5000:5000"
+    #  volumes:
+    #   - ./practice-ecommerce-ts:/app  # Mounts local directory to container
+    #   - /app/node_modules  # Prevents overwriting node_modules   
      environment:
           - PORT=5000
           - MONGO_URI=mongodb://mongo:27017/practiceE
+          - REDIS_URL=redis://redis:6379
           - JWT_SECRET=tttttttttt
      depends_on:
           - mongo
+          - redis
 
+     develop:
+       watch:
+        - action: rebuild
+          path: ./back/package.json
+        - action: rebuild
+          path: ./back/package-lock.json
+        - action: sync
+          path: ./back
+          target: /app
   frontend:
      build:
-       context: ./practice-front
+       context: ./front
      container_name: frontend
      ports:
         - "5173:5173"
+    #  volumes:
+    #   - ./practice-front:/app  # Mount local frontend directory
+    #   - /app/node_modules  # Prevents overwriting node_modules   
      depends_on:
           - backend
-          
+     develop:
+       watch:
+        - action: rebuild
+          path: ./front/package.json
+        - action: rebuild
+          path: ./front/package-lock.json
+        - action: sync
+          path: ./front
+          target: /app
+
 volumes:
   hello-srk:
     driver: local
