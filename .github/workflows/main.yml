@@ -3,52 +3,48 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - main
-  pull_request:
-    branches:
-      - main
+      - main  # Adjust if needed
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
-      # Step 1: Checkout code
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js (Updated to v20)
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 20
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      # Step 3: Install backend dependencies
-      - name: Install backend dependencies
-        working-directory: ./back
-        run: npm install
-
-      # Step 4: Install frontend dependencies
-      - name: Install frontend dependencies
-        working-directory: ./front
-        run: npm install
-
-      # Step 5: Build Docker images with correct context
-      - name: Build Docker images
-        run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/my-project-backend:latest -f ./back/Dockerfile ./back
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/my-project-frontend:latest -f ./front/Dockerfile ./front
-
-      # Step 6: Login to Docker Hub
-      - name: Login to Docker Hub
+      - name: Login to DockerHub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Step 7: Push Docker images to Docker Hub
-      - name: Push backend image
-        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/my-project-backend:latest
+      - name: Build and Push Backend Image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/backend:latest ./back
+          docker push ${{ secrets.DOCKER_USERNAME }}/backend:latest
 
-      - name: Push frontend image
-        run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/my-project-frontend:latest
+      - name: Build and Push Frontend Image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/frontend:latest ./front
+          docker push ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+
+      - name: Deploy on Server via SSH
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/your-project-directory  # Change this to your actual project path
+            git pull origin main
+            docker compose down
+            docker pull ${{ secrets.DOCKER_USERNAME }}/backend:latest
+            docker pull ${{ secrets.DOCKER_USERNAME }}/frontend:latest
+            docker compose up -d --build
+
+      - name: Cleanup Old Docker Images
+        run: docker system prune -af
