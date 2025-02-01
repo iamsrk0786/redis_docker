@@ -17,45 +17,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Docker (including Docker Compose)
-      - name: Install Docker and Docker Compose
-        run: |
-          curl -fsSL https://get.docker.com | sudo bash
-          sudo apt-get update
-          sudo apt-get install -y docker-compose-plugin
-          docker --version
-          docker compose version
-
-      # Step 3: Set up Node.js
+      # Step 2: Set up Node.js (Updated to v20)
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18
+          node-version: 20
 
-      # Step 4: Install backend dependencies
+      # Step 3: Install backend dependencies
       - name: Install backend dependencies
         working-directory: ./back
         run: npm install
 
-      # Step 5: Install frontend dependencies
+      # Step 4: Install frontend dependencies
       - name: Install frontend dependencies
         working-directory: ./front
         run: npm install
 
-      # Step 6: Build Docker images with correct tags
+      # Step 5: Build Docker images with correct context
       - name: Build Docker images
         run: |
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/my-project-backend:latest ./back
-          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/my-project-frontend:latest ./front
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/my-project-backend:latest -f ./back/Dockerfile ./back
+          docker build -t ${{ secrets.DOCKER_HUB_USERNAME }}/my-project-frontend:latest -f ./front/Dockerfile ./front
 
-      # Step 7: Login to Docker Hub
+      # Step 6: Login to Docker Hub
       - name: Login to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      # Step 8: Push Docker images to Docker Hub
+      # Step 7: Push Docker images to Docker Hub
       - name: Push backend image
         run: docker push ${{ secrets.DOCKER_HUB_USERNAME }}/my-project-backend:latest
 
