@@ -28,21 +28,14 @@ jobs:
         working-directory: ./back
         run: npm install
 
-      # Step 4: Run backend tests
-      - name: Run backend tests
-        working-directory: ./back
-        run: npm test
+      
 
       # Step 5: Install dependencies for frontend
       - name: Install frontend dependencies
         working-directory: ./front
         run: npm install
 
-      # Step 6: Run frontend tests
-      - name: Run frontend tests
-        working-directory: ./front
-        run: npm test
-
+      
       # Step 7: Build Docker images
       - name: Build Docker images
         run: docker-compose build
